@@ -185,3 +185,149 @@ class DuckWaterLilyPond
   end
 end
 
+# PondのサブクラスはPondに生息するクラスを作っている
+# Pondに生息するクラスをインスタンス変数に直接格納することで、サブクラスを一層する
+class Pond
+  def initialize(number_animals, animal_class, number_plants, plant_class)
+    @animal_class = animal_class
+    @plant_class = plant_class
+
+    @animals = []
+    number_animals.times do |i|
+      animal = new_organism(:animal, "動物#{i}")
+      @animals << animal
+    end
+
+    @plants = []
+    number_plants.times do |i|
+      plant = new_organism(:plant, "植物#{i}")
+    end
+  end
+
+  def simulate_one_day
+    @plants.each{ |plant| plant.grow }
+    @animals.each{ |animal| animal.speak }
+    @animals.each{ |animal| animal.eat }
+    @animals.each{ |animal| animal.sleep }
+  end
+
+  def new_organism(type, name)
+    if type == :animal
+      @animal_class.new(name)
+    elsif type == :plant
+      @plant_class.new(name)
+    else
+      raise "Unknown organism type: #{type}"
+    end
+  end
+end
+
+# ジャングルのシミュレーションをするようになった
+class Tree
+  def initialize(name)
+    @name = name
+  end
+
+  def grow
+    puts("樹木#{@name}が高く育っています。")
+  end
+end
+
+class Tiger
+  def initialize(name)
+    @name = name
+  end
+
+  def eat
+    puts("トラ#{@name}は食べたいものを何でも食べます。")
+  end
+
+  def speak
+    puts("トラ#{@name}はガオーと吠えています。")
+  end
+
+  def sleep
+    puts("トラ#{@name}は眠くなったら眠ります。")
+  end
+end
+
+# この方法の問題点は生態学的にあり得ない組み合わせが出来てしまうこと
+# 適切な組み合わせのオブジェクトを作成する責務を持つオブジェクトを作る
+class PondOrganismFactory
+  def new_animal(name)
+    Frog.new(name)
+  end
+
+  def new_plant(name)
+    Algae.new(name)
+  end
+end
+
+class JungleOrganismFactory
+  def new_animal(name)
+    Tiger.new(name)
+  end
+
+  def new_plant(name)
+    Tree.new(name)
+  end
+end
+
+class Habitat
+  def initilize(number_animals, number_animals, organism_factory)
+    @organism_factory = organism_factory
+
+    @animals = []
+    number_animals.times do |i|
+      animal = @organism_factory.new_animal("動物#{i}")
+      @animals << animal
+    end
+
+    @plants = []
+    number_plants.times do |i|
+      plant = @organism_factory.new_plant("植物#{i}")
+      @plants << plant
+    end
+  end
+end
+
+# クラスベースのアブストラクトファクトリー
+class OrganismFactory
+  def initialize(plant_class, animal_class)
+    @plant_class = plant_class
+    @animal_class = animal_class
+  end
+
+  def new_animal(name)
+    @animal_class.new(name)
+  end
+
+  def new_plant(name)
+    @plant_class.new(name)
+  end
+end
+
+# クラスの中に知識をカプセル化するか、クラスオブジェクトを格納することでカプセル化を実現するか？
+
+# 名前の活用
+# 統一された命名規則を利用して、フォーマットから実体のFactoryを作成する
+class IOFactory
+  def initialize(format)
+    @reader_class = self.class.const_get("#{format}Reader")
+    @writer_class = self.class.const_get("#{format}Writer")
+  end
+
+  def new_reader
+    @reader_class.new
+  end
+
+  def new_writer
+    @writer_class.new
+  end
+end
+
+html_factory = IOFact ory.new('HTML')
+html_reader = html_factory.new_reader
+
+pdf_factory = IOFactory.new('PDF')
+pdf_writer = pdf_factory.new_writer
